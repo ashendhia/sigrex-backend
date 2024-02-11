@@ -11,10 +11,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator dbml {
-  provider = "prisma-dbml-generator"
-}
-
 model Profile {
   id           String        @id @default(cuid())
   moderation   Boolean       @default(false)
