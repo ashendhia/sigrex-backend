@@ -1,13 +1,12 @@
 const formateurRouter = require('express').Router();
-const { request, response } = require('express');
-const { userExtractor } = require('../utils/middleware');
+const { adminExtractor } = require('../../utils/middleware.js');
 const bcrypt = require('bcrypt');
-const { prisma } = require('../index.js'); // Adjust the path as needed
+const { prisma } = require('../../index.js'); // Adjust the path as needed
 
 formateurRouter.post('/', async (request, response) => {
-    const { mail, name, photo, password, phone, address, more, familyName, sexe, diploma, specialty, employeur, fonction, cv, numeroCompte, status, salaire } = request.body;
+    const { mail, name, photo, password, phone, address, more, familyName, sexe, diploma, employeur, fonction, cv, numeroCompte, status, salaire } = request.body;
 
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.profile.findUnique({
         where: {
             mail: mail
         }
@@ -28,34 +27,43 @@ formateurRouter.post('/', async (request, response) => {
     const saltRounds = 10
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
+    const diplomaDB = await prisma.diploma.findUnique({
+        where: {
+            designation: diploma
+        }
+    });
+
+    if (!diplomaDB) {
+        return response.status(400).json({
+            error: 'diploma not found'
+        })
+    }
+
+
+
     try {
-        const baseUser = await prisma.baseUser.create({
+        const profile = await prisma.profile.create({
             data: {
                 mail,
                 name,
                 photo,
-                passwordHash,
+                password: passwordHash,
                 phone,
                 address,
                 more,
-                approved,
                 user: {
                     create: {
                         familyName,
                         sexe,
                         formateur: {
                             create: {
-                                diploma,
-                                specialty,
+                                diplomaId: diplomaDB.id,
                                 employeur,
                                 fonction,
                                 cv,
                                 numeroCompte,
                                 status,
                                 salaire,
-                                formations: {
-                                    create: formations
-                                }
                             }
                         }
                     }
@@ -63,8 +71,29 @@ formateurRouter.post('/', async (request, response) => {
             }
         });
 
-        response.status(201).json(baseUser);
+        response.status(201).json(profile);
+    } catch (error) {
+        response.status(500).json(error);
+    }
+});
+
+formateurRouter.put('/:id', adminExtractor, async (request, response) => {
+    const { id, approved } = request.params;
+
+    try {
+        const formateur = await prisma.formateur.update({
+            where: {
+                id: parseInt(id)
+            },
+            data: {
+                approved: approved
+            }
+        });
+
+        response.status(200).json(formateur);
     } catch (error) {
         response.status(500).json({ error: 'Something went wrong' });
     }
-});
+})
+
+module.exports = formateurRouter;

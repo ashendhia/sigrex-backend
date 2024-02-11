@@ -1,0 +1,235 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Profile {
+  id String [pk]
+  moderation Boolean [not null, default: false]
+  mail String [unique, not null]
+  name String [not null]
+  photo String
+  password String [not null]
+  phone String [not null]
+  address String [not null]
+  more String
+  approved Boolean [not null, default: false]
+  organization Organization
+  user User
+}
+
+Table User {
+  userId String [unique, not null]
+  id String [pk]
+  familyName String [not null]
+  sexe String [not null]
+  user Profile [not null]
+  formateur Formateur
+  participant Participant
+}
+
+Table Organization {
+  userId String [unique, not null]
+  id Int [pk, increment]
+  user Profile [not null]
+  pays String [not null]
+  url String
+  fax String
+  participants Participant [not null]
+  charges Charge [not null]
+}
+
+Table Formateur {
+  userId String [unique, not null]
+  diplomaId Int [not null]
+  themeId Int
+  id Int [pk, increment]
+  diploma Diploma [not null]
+  theme Theme
+  employeur String [not null]
+  fonction String [not null]
+  cv String [not null]
+  numeroCompte String [not null]
+  status String [not null]
+  salaire Float [not null]
+  groupes Groupe [not null]
+  user User [not null]
+}
+
+Table Diploma {
+  id Int [pk, increment]
+  designation String [unique, not null]
+  formateur Formateur [not null]
+}
+
+Table Participant {
+  userId String [unique, not null]
+  id Int [pk, increment]
+  user User [not null]
+  groupes ParticipantGroupe [not null]
+  organizationId Int [not null]
+  organization Organization [not null]
+  evaluations Evaluation [not null]
+}
+
+Table Domaine {
+  id Int [pk, increment]
+  designation String [unique, not null]
+  themes Theme [not null]
+}
+
+Table Theme {
+  domaineId Int [not null]
+  id Int [pk, increment]
+  domaine Domaine [not null]
+  designation String [unique, not null]
+  description String [not null]
+  public Boolean
+  formateurs Formateur [not null]
+  formations Formation [not null]
+  competences Competence [not null]
+}
+
+Table Formation {
+  themeId Int [not null]
+  id Int [pk, increment]
+  niveauId Int [not null]
+  type String [not null]
+  designation String [unique, not null]
+  description String [not null]
+  photo String
+  theme Theme [not null]
+  dateDebut DateTime
+  dateFin DateTime
+  dureeH Int
+  dureeJ Int
+  heuresParJour Int
+  groupes Groupe [not null]
+  tarif Float [not null]
+  niveau Niveau
+  ressourcesMaterielles Json [not null]
+  ressourcesLogicielles Json [not null]
+  certificate String
+  prerequis Json [not null]
+  objectifs Json [not null]
+  lieu String [not null]
+  status String [not null]
+  nbParticipants Int [not null]
+  nbGroupes Int [not null]
+  evaluations Evaluation [not null]
+  competences CompetencesFormation [not null]
+  charges Charge [not null]
+}
+
+Table Charge {
+  formationId Int [not null]
+  id String [pk]
+  designation String
+  organizationId Int [not null]
+  organization Organization [not null]
+  formation Formation [not null]
+  prix Decimal
+  quantite Decimal
+  tauxTva Decimal
+  totalTva Decimal
+  totalHt Decimal
+  totalTtc Decimal
+  description String
+}
+
+Table Competence {
+  themeId Int [not null]
+  id Int [pk, increment]
+  designation String [unique, not null]
+  theme Theme [not null]
+  formations CompetencesFormation [not null]
+}
+
+Table CompetencesFormation {
+  competenceId Int [not null]
+  competence Competence [not null]
+  formationId Int [not null]
+  formation Formation [not null]
+
+  indexes {
+    (competenceId, formationId) [pk]
+  }
+}
+
+Table Evaluation {
+  formationId Int [not null]
+  participantId Int [not null]
+  id Int [pk, increment]
+  avis String [not null]
+  note Int [not null]
+  formation Formation [not null]
+  participant Participant [not null]
+}
+
+Table Groupe {
+  formateurId Int [not null]
+  formationId Int [not null]
+  id Int [pk, increment]
+  formateur Formateur [not null]
+  formation Formation [not null]
+  nbParticipants Int
+  participants ParticipantGroupe [not null]
+}
+
+Table ParticipantGroupe {
+  participantId Int [not null]
+  participant Participant [not null]
+  groupeId Int [not null]
+  groupe Groupe [not null]
+
+  indexes {
+    (participantId, groupeId) [pk]
+  }
+}
+
+Table Niveau {
+  id Int [pk, increment]
+  designation String [not null]
+  formations Formation [not null]
+}
+
+Ref: User.userId - Profile.id
+
+Ref: Organization.userId - Profile.id
+
+Ref: Formateur.diplomaId > Diploma.id
+
+Ref: Formateur.themeId > Theme.id
+
+Ref: Formateur.userId - User.id
+
+Ref: Participant.userId - User.id
+
+Ref: Participant.organizationId > Organization.id
+
+Ref: Theme.domaineId > Domaine.id
+
+Ref: Formation.themeId > Theme.id
+
+Ref: Formation.niveauId > Niveau.id
+
+Ref: Charge.organizationId > Organization.id
+
+Ref: Charge.formationId > Formation.id
+
+Ref: Competence.themeId > Theme.id
+
+Ref: CompetencesFormation.competenceId > Competence.id
+
+Ref: CompetencesFormation.formationId > Formation.id
+
+Ref: Evaluation.formationId > Formation.id
+
+Ref: Evaluation.participantId > Participant.id
+
+Ref: Groupe.formateurId > Formateur.id
+
+Ref: Groupe.formationId > Formation.id
+
+Ref: ParticipantGroupe.participantId > Participant.id
+
+Ref: ParticipantGroupe.groupeId > Groupe.id

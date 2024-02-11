@@ -4,24 +4,15 @@ const loginRouter = require('express').Router()
 const { prisma } = require('../index'); // Adjust the path as needed
 
 loginRouter.post('/', async (request, response) => {
-    const { email, password } = request.body
+    const { mail, password } = request.body
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.profile.findUnique({
         where: {
-            email: email
+            mail: mail
         },
         include: {
-            candidatures: {
-                select: {
-                    birthDate: true,
-                    specialty: true,
-                    ts: true,
-                    wilaya: true,
-                    address: true,
-                    status: true,
-                    createdAt: true,
-                }
-            }
+            user: true,
+            organization: true,
         }
     })
 
@@ -35,19 +26,24 @@ loginRouter.post('/', async (request, response) => {
         })
     }
 
+    if (!user.approved) {
+        return response.status(401).json({
+            error: 'account not approved'
+        })
+    }
+
+    console.log(user);
+
+
     const userWithoutPass = {
-        email: user.email,
-        id: user.id,
-        familyName: user.familyName,
-        name: user.name,
-        sexe: user.sexe,
+        mail: user.mail,
         phone: user.phone,
-        candidatures: user.candidatures
     }
 
     const userForToken = {
-        email: user.email,
         id: user.id,
+        mail: user.mail,
+        moderation: user.moderation,
     }
 
     const token = jwt.sign(userForToken, process.env.SECRET)

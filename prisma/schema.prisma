@@ -11,8 +11,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model BaseUser {
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+model Profile {
   id           String        @id @default(cuid())
+  moderation   Boolean       @default(false)
   mail         String        @unique @db.VarChar(60)
   name         String        @db.VarChar(60)
   photo        String?
@@ -26,135 +31,174 @@ model BaseUser {
 }
 
 model User {
+  userId      String       @unique
   id          String       @id @default(cuid())
   familyName  String       @db.VarChar(60)
   sexe        String       @db.VarChar(60)
-  userId      String       @unique
-  user        BaseUser     @relation(fields: [userId], references: [id])
+  user        Profile      @relation(fields: [userId], references: [id])
   formateur   Formateur?
   participant Participant?
 }
 
 model Organization {
-  id           Int           @id @default(autoincrement())
   userId       String        @unique
-  user         BaseUser      @relation(fields: [userId], references: [id])
+  id           Int           @id @default(autoincrement())
+  user         Profile       @relation(fields: [userId], references: [id])
+  pays         String        @db.VarChar(60)
+  url          String?
+  fax          String?       @db.VarChar(60)
   participants Participant[]
+  charges      Charge[]
 }
 
 model Formateur {
-  id           Int         @id @default(autoincrement())
-  diploma      Diploma?
-  specialty    Specialty?
-  employeur    String      @db.VarChar(124)
-  fonction     String      @db.VarChar(124)
+  userId       String   @unique
+  diplomaId    Int
+  themeId      Int?
+  id           Int      @id @default(autoincrement())
+  diploma      Diploma  @relation(fields: [diplomaId], references: [id])
+  theme        Theme?   @relation(fields: [themeId], references: [id])
+  employeur    String   @db.VarChar(124)
+  fonction     String   @db.VarChar(124)
   cv           String
-  numeroCompte String      @db.VarChar(60)
-  status       String      @db.VarChar(24)
-  salaire      Float       @db.Float
-  formations   Formation[]
-  userId       String      @unique
-  user         User        @relation(fields: [userId], references: [id])
+  numeroCompte String   @db.VarChar(60)
+  status       String   @db.VarChar(24)
+  salaire      Float    @db.Float
+  groupes      Groupe[]
+  user         User     @relation(fields: [userId], references: [id])
 }
 
+// Diplôme dans le contexte de est ce que c'est un T ou un TS ou un Ingénieur 
 model Diploma {
-  id          Int       @id @default(autoincrement())
-  designation String    @db.VarChar(60)
-  formateurId Int       @unique
-  formateur   Formateur @relation(fields: [formateurId], references: [id])
-}
-
-model Specialty {
-  id          Int       @id @default(autoincrement())
-  designation String    @db.VarChar(60)
-  formateurId Int       @unique
-  formateur   Formateur @relation(fields: [formateurId], references: [id])
+  id          Int         @id @default(autoincrement())
+  designation String      @unique @db.VarChar(60)
+  formateur   Formateur[]
 }
 
 model Participant {
-  id             Int          @id @default(autoincrement())
-  formations     Formation[]
-  niveau         Niveau?
-  userId         String       @unique
-  user           User         @relation(fields: [userId], references: [id])
+  userId         String              @unique
+  id             Int                 @id @default(autoincrement())
+  user           User                @relation(fields: [userId], references: [id])
+  groupes        ParticipantGroupe[]
   organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  // Add attributes specific to participants
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  evaluations    Evaluation[]
+}
+
+model Domaine {
+  id          Int     @id @default(autoincrement())
+  designation String  @unique @db.VarChar(60)
+  themes      Theme[]
 }
 
 model Theme {
-  id          Int         @id @default(autoincrement())
-  famille     String      @db.VarChar(60)
-  designation String      @db.VarChar(60)
-  description String      @db.VarChar(1024)
+  domaineId   Int
+  id          Int          @id @default(autoincrement())
+  domaine     Domaine      @relation(fields: [domaineId], references: [id])
+  designation String       @unique @db.VarChar(60)
+  description String       @db.VarChar(1024)
   public      Boolean?
+  formateurs  Formateur[]
   formations  Formation[]
+  competences Competence[]
 }
 
 // Relations that are related to the Theme model
-
 model Formation {
-  id                    Int                 @id @default(autoincrement())
-  designation           String              @db.VarChar(60)
-  description           String              @db.VarChar(1024)
   themeId               Int
-  theme                 Theme               @relation(fields: [themeId], references: [id])
-  formateurId           Int
-  formateur             Formateur           @relation(fields: [formateurId], references: [id])
-  dateDebut             DateTime
-  dateFin               DateTime
-  dureeH                Int                 @db.Int
-  dureeJ                Int                 @db.Int
-  heuresParJour         Int                 @db.Int
-  tarif                 Float               @db.Float
-  niveau                Niveau?
-  ressourcesMaterielles MaterialRessource[]
-  ressourcesLogicielles SoftwareRessource[]
-  certifiante           String?
-  prerequis             Requirement[]
-  objectifs             Objectif[]
-  lieu                  String              @db.VarChar(60)
-  status                String              @db.VarChar(60)
-  nbParticipants        Int                 @db.Int
-  nbGroupes             Int                 @db.Int
-  participants          Participant[]
+  id                    Int                    @id @default(autoincrement())
+  niveauId              Int
+  type                  String                 @db.VarChar(60)
+  designation           String                 @unique @db.VarChar(60)
+  description           String                 @db.VarChar(1024)
+  photo                 String?
+  theme                 Theme                  @relation(fields: [themeId], references: [id])
+  dateDebut             DateTime?              @db.Date
+  dateFin               DateTime?              @db.Date
+  dureeH                Int?                   @db.Int
+  dureeJ                Int?                   @db.Int
+  heuresParJour         Int?                   @db.Int
+  groupes               Groupe[]
+  tarif                 Float                  @db.Float
+  niveau                Niveau?                @relation(fields: [niveauId], references: [id])
+  ressourcesMaterielles Json
+  ressourcesLogicielles Json
+  certificate           String?
+  prerequis             Json
+  objectifs             Json
+  lieu                  String                 @db.VarChar(60)
+  status                String                 @db.VarChar(60)
+  nbParticipants        Int                    @db.Int
+  nbGroupes             Int                    @db.Int
+  evaluations           Evaluation[]
+  competences           CompetencesFormation[]
+  charges               Charge[]
 }
 
-model Niveau {
+model Charge {
+  formationId    Int
+  id             String       @id @db.VarChar(10)
+  designation    String?      @db.VarChar(200)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  formation      Formation    @relation(fields: [formationId], references: [id])
+  prix           Decimal?     @db.Decimal
+  quantite       Decimal?     @db.Decimal(18, 2)
+  tauxTva        Decimal?     @db.Decimal(18, 2)
+  totalTva       Decimal?     @db.Decimal(18, 2)
+  totalHt        Decimal?     @db.Decimal(18, 2)
+  totalTtc       Decimal?     @db.Decimal(18, 2)
+  description    String?
+}
+
+model Competence {
+  themeId     Int
+  id          Int                    @id @default(autoincrement())
+  designation String                 @unique @db.VarChar(60)
+  theme       Theme                  @relation(fields: [themeId], references: [id])
+  formations  CompetencesFormation[]
+}
+
+model CompetencesFormation {
+  competenceId Int
+  competence   Competence @relation(fields: [competenceId], references: [id])
+  formationId  Int
+  formation    Formation  @relation(fields: [formationId], references: [id])
+
+  @@id([competenceId, formationId])
+}
+
+model Evaluation {
+  formationId   Int
+  participantId Int
   id            Int         @id @default(autoincrement())
-  designation   String      @db.VarChar(60)
-  description   String      @db.VarChar(124)
-  formationId   Int         @unique
+  avis          String      @db.VarChar(1024)
+  note          Int         @db.Int
   formation     Formation   @relation(fields: [formationId], references: [id])
-  participantId Int         @unique
   participant   Participant @relation(fields: [participantId], references: [id])
 }
 
-model Objectif {
-  id          Int       @id @default(autoincrement())
-  description String    @db.VarChar(124)
-  designation String    @db.VarChar(60)
-  formationId Int
-  formation   Formation @relation(fields: [formationId], references: [id])
+model Groupe {
+  formateurId    Int
+  formationId    Int
+  id             Int                 @id @default(autoincrement())
+  formateur      Formateur           @relation(fields: [formateurId], references: [id])
+  formation      Formation           @relation(fields: [formationId], references: [id])
+  nbParticipants Int?
+  participants   ParticipantGroupe[]
 }
 
-model Requirement {
-  id          Int       @id @default(autoincrement())
-  designation String    @db.VarChar(60)
-  formationId Int
-  formation   Formation @relation(fields: [formationId], references: [id])
+model ParticipantGroupe {
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  groupeId      Int
+  groupe        Groupe      @relation(fields: [groupeId], references: [id])
+
+  @@id([participantId, groupeId])
 }
 
-model MaterialRessource {
-  id          Int       @id @default(autoincrement())
-  designation String    @db.VarChar(60)
-  formationId Int
-  formation   Formation @relation(fields: [formationId], references: [id])
-}
-
-model SoftwareRessource {
-  id          Int       @id @default(autoincrement())
-  designation String    @db.VarChar(60)
-  formationId Int
-  formation   Formation @relation(fields: [formationId], references: [id])
+model Niveau {
+  id          Int         @id @default(autoincrement())
+  designation String      @db.VarChar(60)
+  formations  Formation[]
 }

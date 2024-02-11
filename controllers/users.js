@@ -4,11 +4,11 @@ const bcrypt = require('bcrypt')
 const { prisma } = require('../index.js'); // Adjust the path as needed
 
 usersRouter.post('/', async (request, response) => {
-    const { email, name, familyName, password, sexe, phone, organization, address, more } = request.body
+    const { mail, name, password, secret, phone, address, more } = request.body
 
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.profile.findUnique({
         where: {
-            email: email
+            mail: mail
         }
     })
     if (existingUser) {
@@ -22,22 +22,27 @@ usersRouter.post('/', async (request, response) => {
         })
     }
 
+    else if (secret !== process.env.SECRET) {
+        return response.status(401).json({
+            error: 'invalid secret'
+        })
+    }
+
     const saltRounds = 10
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
     const user = {
-        email: email,
+        mail: mail,
         name: name,
-        familyName: familyName,
         password: passwordHash,
-        sexe: sexe,
+        moderation: true,
         phone: phone,
-        organization: organization,
         address: address,
-        more: more
+        more: more,
+        approved: true,
     }
 
-    const savedUser = await prisma.user.create({
+    const savedUser = await prisma.profile.create({
         data: user
     })
 
@@ -55,11 +60,7 @@ usersRouter.get('/', userExtractor, async (request, response) => {
         })
     }
 
-    const users = await prisma.user.findMany({
-        include: {
-            candidatures: true
-        }
-    })
+    const users = await prisma.user.findMany()
 
     // select only the users that have candidatures that were done this year 
     const usersWithCandidatures = users.filter(user => {

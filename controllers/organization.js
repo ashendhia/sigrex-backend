@@ -1,13 +1,12 @@
 const organizationRouter = require('express').Router()
-const { request, response } = require('express')
-const { userExtractor } = require('../utils/middleware')
+const { adminExtractor } = require('../utils/middleware')
 const bcrypt = require('bcrypt')
 const { prisma } = require('../index.js'); // Adjust the path as needed
 
 organizationRouter.post('/', async (request, response) => {
-    const { mail, name, photo, password, phone, address, more } = request.body;
+    const { mail, name, photo, password, phone, address, more, pays, url, fax } = request.body;
 
-    const existingUser = await prisma.baseUser.findUnique({
+    const existingUser = await prisma.profile.findUnique({
         where: {
             mail: mail
         }
@@ -29,17 +28,20 @@ organizationRouter.post('/', async (request, response) => {
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
     try {
-        const user = await prisma.baseUser.create({
+        const user = await prisma.profile.create({
             data: {
                 mail,
                 name,
                 photo,
-                passwordHash,
+                password: passwordHash,
                 phone,
                 address,
                 more,
                 organization: {
                     create: {
+                        pays,
+                        url,
+                        fax,
                         participants: {
                             create: []
                         }
@@ -48,21 +50,14 @@ organizationRouter.post('/', async (request, response) => {
             }
         });
 
-        res.status(201).json(user);
+        response.status(201).json(user);
     } catch (error) {
-        res.status(500).json({ error: 'Something went wrong' });
+        response.status(500).json({ error: 'Something went wrong' });
     }
 });
 
 // set the organization to approved but only if the user is an admin
-organizationRouter.put('/:id', userExtractor, async (req, res) => {
-    const user = req.user;
-
-    if (user.email !== 'admin@esi.dz') {
-        return res.status(401).json({
-            error: 'invalid user'
-        });
-    }
+organizationRouter.put('/:id', adminExtractor, async (req, response) => {
 
     const { id, approved } = req.params;
 
@@ -76,9 +71,9 @@ organizationRouter.put('/:id', userExtractor, async (req, res) => {
             }
         });
 
-        res.status(200).json(organization);
+        response.status(200).json(organization);
     } catch (error) {
-        res.status(500).json({ error: 'Something went wrong' });
+        response.status(500).json({ error: 'Something went wrong' });
     }
 });
 

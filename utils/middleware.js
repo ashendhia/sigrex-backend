@@ -21,14 +21,35 @@ const tokenExtractor = (request, response, next) => {
 }
 const userExtractor = async (request, response, next) => {
   const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
   if (!decodedToken.id) {
     return response.status(401).json({ error: 'token missing or invalid' })
   }
-  request.user = await prisma.user.findUnique({
+  request.user = await prisma.profile.findUnique({
     where: {
       id: decodedToken.id
     }
   })
+  next()
+}
+
+const adminExtractor = async (request, response, next) => {
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'token missing or invalid' })
+  }
+  request.user = await prisma.profile.findUnique({
+    where: {
+      id: decodedToken.id
+    }
+  })
+
+  if (!request.user.moderation) {
+    return response.status(401).json({
+      error: 'Youre not an admin'
+    })
+  }
   next()
 }
 
@@ -57,5 +78,6 @@ module.exports = {
   unknownEndpoint,
   tokenExtractor,
   userExtractor,
+  adminExtractor,
   errorHandler
 }
