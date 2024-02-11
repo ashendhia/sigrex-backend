@@ -28,6 +28,10 @@ app.use(express.json())
 app.use(middleware.requestLogger)
 app.use(middleware.tokenExtractor)
 
+app.get('/', (request, response) => {
+    response.send('<h1>Hello World!</h1>')
+})
+
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/organization', organizationRouter)
