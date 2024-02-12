@@ -1,18 +1,14 @@
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const loginRouter = require('express').Router()
+const adminRouter = require('express').Router()
 const { prisma } = require('../index'); // Adjust the path as needed
 
-loginRouter.post('/', async (request, response) => {
+adminRouter.post('/', async (request, response) => {
     const { mail, password } = request.body
 
     const user = await prisma.profile.findUnique({
         where: {
             mail: mail
-        },
-        include: {
-            user: true,
-            organization: true,
         }
     })
 
@@ -26,7 +22,7 @@ loginRouter.post('/', async (request, response) => {
         })
     }
 
-    if (!user.approved) {
+    if (!user.moderation) {
         return response.status(401).json({
             error: 'account not approved'
         })
@@ -51,4 +47,4 @@ loginRouter.post('/', async (request, response) => {
         .send({ token, userWithoutPass })
 })
 
-module.exports = loginRouter
+module.exports = adminRouter
