@@ -9,29 +9,29 @@ const loginRouter = require('./controllers/login')
 const organizationRouter = require('./controllers/organization')
 const formateurRouter = require('./controllers/formateur/formateur')
 // Formateur Related
-const diplomeRouter = require('./controllers/formateur/diplome')
+const diplomeRouter = require("./controllers/formateur/diplome");
 // Formation Related
-const formationRouter = require('./controllers/formations/formation')
-const domaineRouter = require('./controllers/formations/domaine')
-const themeRouter = require('./controllers/formations/theme')
-const niveauRouter = require('./controllers/formations/niveau')
-const middleware = require('./utils/middleware')
-const logger = require('./utils/logger')
+const competenceRouter = require("./controllers/formations/competence");
 
-logger.info('Connecting to planetscale database...')
+const formationRouter = require("./controllers/formations/formation");
+const domaineRouter = require("./controllers/formations/domaine");
+const themeRouter = require("./controllers/formations/theme");
+const niveauRouter = require("./controllers/formations/niveau");
+const middleware = require("./utils/middleware");
+const logger = require("./utils/logger");
 
+logger.info("Connecting to planetscale database...");
 
+app.use(cors());
 
-app.use(cors())
+app.use(express.static("build"));
+app.use(express.json());
+app.use(middleware.requestLogger);
+app.use(middleware.tokenExtractor);
 
-app.use(express.static('build'))
-app.use(express.json())
-app.use(middleware.requestLogger)
-app.use(middleware.tokenExtractor)
-
-app.get('/', (request, response) => {
-    response.send('<h1>Hello World!</h1>')
-})
+app.get("/", (request, response) => {
+    response.send("<h1>Hello World!</h1>");
+});
 
 app.use('/api/admin', adminRouter)
 app.use('/api/users', usersRouter)
@@ -39,14 +39,15 @@ app.use('/api/login', loginRouter)
 app.use('/api/organization', organizationRouter)
 app.use('/api/formateur', formateurRouter)
 // Formateur Related
-app.use('/api/diplome', diplomeRouter)
+app.use("/api/diplome", diplomeRouter);
 // Formation Related
-app.use('/api/formation', formationRouter)
-app.use('/api/domaine', domaineRouter)
-app.use('/api/theme', themeRouter)
-app.use('/api/niveau', niveauRouter)
+app.use("/api/formation", formationRouter);
+app.use("/api/domaine", domaineRouter);
+app.use("/api/theme", themeRouter);
+app.use("/api/niveau", niveauRouter);
+// app.use("/api/competance", competenceRouter);
 
-app.use(middleware.unknownEndpoint)
-app.use(middleware.errorHandler)
+app.use(middleware.unknownEndpoint);
+app.use(middleware.errorHandler);
 
-module.exports = app
+module.exports = app;
