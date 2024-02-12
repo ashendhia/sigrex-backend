@@ -38,6 +38,7 @@ loginRouter.post('/', async (request, response) => {
     const userWithoutPass = {
         mail: user.mail,
         phone: user.phone,
+        moderation: user.moderation,
     }
 
     const userForToken = {
@@ -50,7 +51,7 @@ loginRouter.post('/', async (request, response) => {
 
     response
         .status(200)
-        .send({ token, userid: user.id, userWithoutPass })
+        .send({ token, userWithoutPass })
 })
 
 module.exports = loginRouter

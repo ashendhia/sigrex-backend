@@ -61,10 +61,24 @@ formationRouter.post("/", adminExtractor, async (request, response) => {
   }
 });
 
+formationRouter.get('/', async (request, response) => {
+    const { domaines, themes, niveaux } = request.query;
+    const { page } = request.body
 formationRouter.get("/", async (request, response) => {
   const { domaines, themes, niveaux } = request.query;
   // const { page } = request.params;
 
+    try {
+
+        // verify if the theme in formation is any of the themes in the query, and if the theme is in the query, verify if the domaine is in the query
+
+        let themesInt = themes ? themes.split(',').map(theme => parseInt(theme)) : null
+        let domainesInt = domaines ? domaines.split(',').map(domaine => parseInt(domaine)) : null
+        let niveauxInt = niveaux ? niveaux.split(',').map(niveau => parseInt(niveau)) : null
+
+        const themesDB = await prisma.theme.findMany()
+        const domainesDB = await prisma.domaine.findMany()
+        const niveauxDB = await prisma.niveau.findMany()
   try {
     // verify if the theme in formation is any of the themes in the query, and if the theme is in the query, verify if the domaine is in the query
 
@@ -82,6 +96,30 @@ formationRouter.get("/", async (request, response) => {
     const domainesDB = await prisma.domaine.findMany();
     const niveauxDB = await prisma.niveau.findMany();
 
+        const formations = await prisma.formation.findMany({
+            include: {
+                theme: {
+                    include: {
+                        domaine: true
+                    }
+                }
+            },
+            where: {
+                themeId: {
+                    in: themes ? themesInt : themesDB.map(theme => theme.id)
+                },
+                theme: {
+                    domaineId: {
+                        in: domaines ? domainesInt : domainesDB.map(domaine => domaine.id)
+                    }
+                },
+                niveauId: {
+                    in: niveaux ? niveauxInt : niveauxDB.map(niveau => niveau.id)
+                }
+            },
+            skip: Number(page) * 12,
+            take: 12
+        })
     const formations = await prisma.formation.findMany({
       include: {
         theme: {
